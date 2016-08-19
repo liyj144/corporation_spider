@@ -23,6 +23,10 @@ class CorpSpider(CrawlSpider):
 
     )
 
+    def __init__(self):
+        self.url_prefix = 'http://www.zhiqiye.com'
+        super(CorpSpider, self).__init__()
+
     """
     分析页面数据, 一共有以下几种情况：
         1. 省份 -- 选择省份（除全国外）
@@ -42,7 +46,7 @@ class CorpSpider(CrawlSpider):
         ar_province = corp.get_city_list(response)
         for province in ar_province:
             self.log("--------start parse province----- url is %s" % province[0])
-            yield Request("%s%s" % ('http://www.zhiqiye.com', province[0]),
+            yield Request("%s%s" % (self.url_prefix, province[0]),
                           meta={"province": province[1]},
                           callback=self.parse_city)
 
@@ -55,7 +59,7 @@ class CorpSpider(CrawlSpider):
         ar_city = corp.get_city_list(response, '20')
         if len(ar_city):
             for city in ar_city:
-                yield Request("%s%s" % ('http://www.zhiqiye.com', city[0]),
+                yield Request("%s%s" % (self.url_prefix, city[0]),
                               meta={"province": province,
                                     "city": city[1]}, callback=self.parse_area)
         else:
@@ -72,7 +76,7 @@ class CorpSpider(CrawlSpider):
         corp = CorpParseModel()
         ar_area = corp.get_city_list(response, '30')
         for area in ar_area:
-            yield Request("%s%s" % ('http://www.zhiqiye.com', area[0]),
+            yield Request("%s%s" % (self.url_prefix, area[0]),
                           meta={"province": province,
                                 "city": city,
                                 "area": area[1]}, callback=self.parse_page)
@@ -87,14 +91,14 @@ class CorpSpider(CrawlSpider):
         corp = CorpParseModel()
         ar_corp = corp.get_corp_list(response)
         for corp_url in ar_corp:
-            yield Request("%s%s" % ('http://www.zhiqiye.com', corp_url),
+            yield Request("%s%s" % (self.url_prefix, corp_url),
                           meta={"province": province,
                                 "city": city,
                                 "area": area}, callback=self.parse_corp)
         # todo 模拟下一页
         next_page = corp.get_next_page_url(response)
         if next_page:
-            yield Request("%s%s" % ('http://www.zhiqiye.com', next_page),
+            yield Request("%s%s" % (self.url_prefix, next_page),
                           meta={"province": province,
                                 "city": city,
                                 "area": area}, callback=self.parse_page)

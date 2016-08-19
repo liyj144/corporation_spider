@@ -3,6 +3,8 @@ from scrapy.spiders import CrawlSpider
 from scrapy.shell import inspect_response
 import re
 
+
+
 class TestSpider(CrawlSpider):
     name = "test"
     start_urls = [
@@ -11,9 +13,10 @@ class TestSpider(CrawlSpider):
     ]
 
     def parse(self, response):
-        next_page = response.css(".pag-numble").xpath(u"//a[contains(@title,'下一页')]").re(re.compile(ur'href="(.*?)".*>(?:.*)</a>'))
-        if next_page:
-            print next_page[0]
+        #next_page = response.css(".pag-numble").xpath(u"//a[contains(@title,'下一页')]").re(re.compile(ur'href="(.*?)".*>(?:.*)</a>'))
+        #if next_page:
+        #    print next_page[0]
+        print response.css(".pag-numble").xpath(u"//a[@title='下一页']/@href").extract()[0]
         inspect_response(response, self)
 
 

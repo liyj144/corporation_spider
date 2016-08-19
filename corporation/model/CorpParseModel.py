@@ -41,7 +41,7 @@ class CorpParseModel(object):
     获取下一页链接地址
     """
     def get_next_page_url(self, response):
-        next_page = response.css(".pag-numble").xpath(u"//a[contains(@title,'下一页')]").re(self.re_page_url)
+        next_page = response.css(".pag-numble").xpath(u"//a[@title='下一页']/@href").extract()
         if next_page:
             return next_page[0]
         return False
