@@ -95,7 +95,7 @@ class CorpSpider(CrawlSpider):
                           meta={"province": province,
                                 "city": city,
                                 "area": area}, callback=self.parse_corp)
-        # todo 模拟下一页
+        # 将下一页加入到爬取队列
         next_page = corp.get_next_page_url(response)
         if next_page:
             yield Request("%s%s" % (self.url_prefix, next_page),

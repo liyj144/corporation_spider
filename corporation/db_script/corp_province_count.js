@@ -1,0 +1,1 @@
+db.getCollection('corp').find({"province":"…œ∫£"}).count()

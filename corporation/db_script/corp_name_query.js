@@ -1,0 +1,1 @@
+db.getCollection('corp').find({corp_name:/ºÏºÏ/}).limit(5)
