@@ -9,7 +9,9 @@ class TestSpider(CrawlSpider):
     name = "test"
     start_urls = [
         #"http://www.zhiqiye.com/company/7A3577A29D3C4598A9089329BD32D8B4/index.html",
-        "http://www.zhiqiye.com/r-new/0049000000000000_1.html"
+        "http://www.zhiqiye.com/company/6A0C9366B8D44604B5E1DCA6B502D4C4/index.html",
+        "http://www.zhiqiye.com/company/17651AD021624542AC6D062513B2960F/index.html",
+        #"http://www.zhiqiye.com/r-new/0049000000000000_1.html"
     ]
 
     def parse(self, response):

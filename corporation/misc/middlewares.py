@@ -1,6 +1,20 @@
 # coding=utf-8
 from random import choice
 from helper import gen_bids
+from scrapy.exceptions import IgnoreRequest
+from ..misc.store import confRedis
+import logging
+
+
+class IgnoreHttpRequestMiddleware(object):
+    # 公司重复性过滤
+    def process_response(self, request, response, spider):
+        corp_id = request.meta.get('corp_id')
+        if confRedis.sismember('corp_id', corp_id):
+            logging.debug("corp_id " + corp_id + "already get, skipped ")
+            raise IgnoreRequest("corp_id " + corp_id + "already get, skipped ")
+        else:
+            return response
 
 
 class CustomCookieMiddleware(object):

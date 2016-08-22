@@ -55,6 +55,12 @@ class CorpParseModel(object):
             return re_corp.group(1)
         return False
 
+    def get_corp_id_by_url(self, url):
+        re_corp = self.re_corp_id.match(url)
+        if re_corp:
+            return re_corp.group(1)
+        return False
+
     """
     获取企业名称、认证部门、更新时间等信息
     """
