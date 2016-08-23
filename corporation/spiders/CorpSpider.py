@@ -117,6 +117,7 @@ class CorpSpider(CrawlSpider):
         corp = CorpParseModel()
         corp.get_corp_tips(response, item)
         corp.get_contact(response, item)
+        corp.get_commercial(response, item)
         corp.get_corp_info(response, item)
         corp.get_relate_corp(response, item)
         return item

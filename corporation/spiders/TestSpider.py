@@ -4,7 +4,6 @@ from scrapy.shell import inspect_response
 import re
 
 
-
 class TestSpider(CrawlSpider):
     name = "test"
     start_urls = [
