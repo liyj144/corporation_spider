@@ -10,9 +10,13 @@ class IgnoreHttpRequestMiddleware(object):
     # 公司重复性过滤
     def process_response(self, request, response, spider):
         corp_id = request.meta.get('corp_id')
+        # 获取上海的企业
+        province = request.meta.get('province')
+        if province and province not in [u'上海', u'北京', u'广东']:
+            raise IgnoreRequest("")
         if confRedis.sismember('corp_id', corp_id):
-            logging.debug("corp_id " + corp_id + "already get, skipped ")
-            raise IgnoreRequest("corp_id " + corp_id + "already get, skipped ")
+            logging.debug("corp_id " + corp_id + ",already get, skipped ")
+            raise IgnoreRequest("corp_id " + corp_id + ",already get, skipped ")
         else:
             return response
 
