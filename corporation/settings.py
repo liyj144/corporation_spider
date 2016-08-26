@@ -9,7 +9,7 @@ ROBOTSTXT_OBEY = True
 DOWNLOADER_MIDDLEWARES = {
     'corporation.misc.middlewares.IgnoreHttpRequestMiddleware': 1,
     'corporation.misc.middlewares.CustomUserAgentMiddleware': 401,
-    'corporation.misc.middlewares.CustomCookieMiddleware': 701,
+    #'corporation.misc.middlewares.CustomCookieMiddleware': 701,
     'corporation.misc.middlewares.CustomHeadersMiddleware': 551,
 }
 ITEM_PIPELINES = {

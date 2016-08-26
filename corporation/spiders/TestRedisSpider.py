@@ -48,63 +48,33 @@ class CorpSpider(CrawlSpider):
     """
 
     # 首先定位到登陆页面
-    """
-    def start_requests(self):
-        return [Request("http://www.zhiqiye.com/index.html",
-                        meta = {'cookiejar': 1},
-                        callback = self.post_login)]
-    """
     def start_requests(self):
         logging.info("start to login ...")
         return [Request("http://www.zhiqiye.com/index.html",
-                    meta={'cookiejar': 1}, callback=self.post_login)]
+                        callback=self.post_login)]
 
     def post_login(self, response):
         logging.info("post login ...")
         current = int(time.time() * 1000)
         return [FormRequest.from_response(response,
-                                            url="http://www.zhiqiye.com/account/login/",
-                                            method="POST",
-                                            headers=self.post_headers,
-                                            formdata={
-                                                'time': "%s" % current,
-                                                'username': 'test3',
-                                                'pass': 'qwer1234',
-                                                'f': 'false'
-                                            },
-                                            meta={'cookiejar': response.meta['cookiejar']},
-                                            dont_filter=True,
-                                            callback=self.after_login)]
+                                        url="http://www.zhiqiye.com/account/login/",
+                                        method="POST",
+                                        #headers=self.post_headers,
+                                        formdata={
+                                            'time': "%s" % current,
+                                            'username': 'test3',
+                                            'pass': 'qwer1234',
+                                            'f': 'false'
+                                        },
+                                        dont_filter=True,
+                                        callback=self.after_login)]
 
-    """
-    def _requests_to_follow(self, response):
-        if not isinstance(response, HtmlResponse):
-            return
-        seen = set()
-        for n, rule in enumerate(self._rules):
-            links = [l for l in rule.link_extractor.extract_links(response) if l not in seen]
-            if links and rule.process_links:
-                links = rule.process_links(links)
-            for link in links:
-                seen.add(link)
-                r = Request(url=link.url, callback=self._response_downloaded)
-                # 下面这句是我重写的
-                r.meta.update(rule=n, link_text=link.text, cookiejar=response.meta['cookiejar'])
-                yield rule.process_request(r)
-    """
     def after_login(self, response):
-        inspect_response(response, self)
-        cookieJar = response.meta.setdefault('cookiejar', cookies.CookieJar())
-        cookieJar.extract_cookies(response, response.request)
-        for cookie in cookieJar:
-            print cookie
         for url in self.start_urls :
             yield Request( url=url,
-                            meta={"cookiejar": response.meta['cookiejar']},
                             callback=self.parse_page)
 
     def parse_page(self, response):
-
         province = response.meta.get('province', '')
         city = response.meta.get('city', '')
         area = response.meta.get('area', '')
@@ -114,7 +84,6 @@ class CorpSpider(CrawlSpider):
             corp_id = corp.get_corp_id_by_url(corp_url)
             yield Request("%s%s" % (self.url_prefix, corp_url),
                           meta={"province": province,
-                                "cookiejar": response.meta['cookiejar'],
                                 "city": city,
                                 "area": area,
                                 "corp_id": corp_id}, callback=self.parse_corp)
@@ -124,7 +93,6 @@ class CorpSpider(CrawlSpider):
     """
     def parse_corp(self, response):
         print "parse corp"
-        #inspect_response(response, self)
         item = CorpItem()
         item["province"] = response.meta.get('province', '')
         item["city"] = response.meta.get('city', '')
@@ -133,6 +101,7 @@ class CorpSpider(CrawlSpider):
         corp = CorpParseModel()
         corp.get_corp_tips(response, item)
         corp.get_contact(response, item)
+        corp.get_commercial(response, item)
         corp.get_corp_info(response, item)
         corp.get_relate_corp(response, item)
         return item
