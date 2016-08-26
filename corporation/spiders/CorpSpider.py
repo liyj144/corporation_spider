@@ -1,7 +1,10 @@
 # encoding: utf-8
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
-from scrapy import Request
+from scrapy.http import Request, FormRequest
+from scrapy.shell import inspect_response
+import time
+import logging
 
 from ..item.CorpItem import CorpItem
 from ..model.CorpParseModel import CorpParseModel
@@ -36,6 +39,34 @@ class CorpSpider(CrawlSpider):
         6. 内容 -- 进入内容详情
     """
 
+    # 首先定位到登陆页面
+    def start_requests(self):
+        logging.info("start to login ...")
+        return [Request("http://www.zhiqiye.com/index.html",
+                    callback=self.post_login)]
+
+    def post_login(self, response):
+        logging.info("post login ...")
+        current = int(time.time() * 1000)
+        return [FormRequest.from_response(response,
+                                        url="http://www.zhiqiye.com/account/login/",
+                                        method="POST",
+                                        formdata={
+                                            'time': "%s" % current,
+                                            'username': 'test3',
+                                            'pass': 'qwer1234',
+                                            'f': 'false'
+                                        },
+                                        dont_filter=True,
+                                        callback=self.after_login)]
+
+    """
+    登陆后重新进行规则匹配
+    """
+    def after_login(self, response):
+        for url in self.start_urls :
+            yield Request(url=url, callback=self.parse_province)
+
     """
     分析省份详情
     """
@@ -56,7 +87,7 @@ class CorpSpider(CrawlSpider):
         province = response.meta.get('province', '')
         corp = CorpParseModel()
         ar_city = corp.get_city_list(response, '20')
-        if len(ar_city):
+        if len(ar_city) > 0:
             for city in ar_city:
                 yield Request("%s%s" % (self.url_prefix, city[0]),
                               meta={"province": province,
@@ -109,6 +140,7 @@ class CorpSpider(CrawlSpider):
     分析企业详情
     """
     def parse_corp(self, response):
+        #inspect_response(response, self)
         item = CorpItem()
         item["province"] = response.meta.get('province', '')
         item["city"] = response.meta.get('city', '')

@@ -97,9 +97,15 @@ class CorpParseModel(object):
         item['capital'] = ar_xpath[3].xpath("text()").extract()[0].strip() if xpath_len > 3 else ""
         item['corp_status'] = ar_xpath[4].xpath("em/text()").extract()[0].strip() if xpath_len > 4 else ""
         item['qualification'] = ar_xpath[5].xpath("text()").extract()[0].strip() if xpath_len > 5 else ""
-        item['representative'] = ar_xpath[6].xpath("a/text()").extract()[0].strip() if xpath_len > 6 else ""
+        if xpath_len > 6 and len(ar_xpath[6].xpath("a/text()").extract()) > 0:
+            item['representative'] = ar_xpath[6].xpath("a/text()").extract()[0].strip()
+        else:
+            item['representative'] = ""
         item['operating_period'] = ar_xpath[7].xpath("text()").extract()[0].strip() if xpath_len > 7 else ""
-        item['register_address'] = ar_xpath[8].xpath("a/text()").extract()[0].strip() if xpath_len > 8 else ""
+        if  xpath_len > 8 and len(ar_xpath[8].xpath("a/text()").extract()) > 0:
+            item['register_address'] = ar_xpath[8].xpath("a/text()").extract()[0].strip()
+        else:
+            item['register_address'] = ""
 
     """
     招聘信息

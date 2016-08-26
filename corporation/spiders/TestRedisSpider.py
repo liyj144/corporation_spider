@@ -22,6 +22,7 @@ class CorpSpider(CrawlSpider):
              callback="parse_page", follow=True),
     )
 
+    """
     post_headers = {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Encoding": "gzip, deflate",
@@ -32,6 +33,7 @@ class CorpSpider(CrawlSpider):
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.75 Safari/537.36",
         "Referer": "https://www.zhiqiye.com/",
     }
+    """
 
     def __init__(self):
         self.url_prefix = 'http://www.zhiqiye.com'
@@ -92,6 +94,7 @@ class CorpSpider(CrawlSpider):
     分析企业详情
     """
     def parse_corp(self, response):
+        inspect_response(response, self)
         print "parse corp"
         item = CorpItem()
         item["province"] = response.meta.get('province', '')
