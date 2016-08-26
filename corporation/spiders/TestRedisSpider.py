@@ -1,9 +1,10 @@
 # encoding: utf-8
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
-from scrapy import Request, FormRequest
+from scrapy.http import Request, FormRequest, HtmlResponse, cookies
 from scrapy.shell import inspect_response
 import time
+import logging
 
 from ..item.CorpItem import CorpItem
 from ..model.CorpParseModel import CorpParseModel
@@ -20,6 +21,17 @@ class CorpSpider(CrawlSpider):
         Rule(LinkExtractor(allow=r"/r-new/0049003100140000_1"),
              callback="parse_page", follow=True),
     )
+
+    post_headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept-Language": "zh-CN,zh;q=0.8,en;q=0.6",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.75 Safari/537.36",
+        "Referer": "https://www.zhiqiye.com/",
+    }
 
     def __init__(self):
         self.url_prefix = 'http://www.zhiqiye.com'
@@ -43,29 +55,56 @@ class CorpSpider(CrawlSpider):
                         callback = self.post_login)]
     """
     def start_requests(self):
-        print "start to login ..."
-        current = int(time.time() * 1000)
-        return [FormRequest(url="http://www.zhiqiye.com/account/login/",
-                            method="POST",
-                            formdata={
-                                'url': '',
-                                'method': 'POST',
-                                'time': "%s" % current,
-                                'username': 'test3',
-                                'pass': 'qwer1234',
-                                'f': 'false'
-                            },
-                            meta={'cookiejar': 1},
-                            callback=self.after_login)]
+        logging.info("start to login ...")
+        return [Request("http://www.zhiqiye.com/index.html",
+                    meta={'cookiejar': 1}, callback=self.post_login)]
 
+    def post_login(self, response):
+        logging.info("post login ...")
+        current = int(time.time() * 1000)
+        return [FormRequest.from_response(response,
+                                            url="http://www.zhiqiye.com/account/login/",
+                                            method="POST",
+                                            headers=self.post_headers,
+                                            formdata={
+                                                'time': "%s" % current,
+                                                'username': 'test3',
+                                                'pass': 'qwer1234',
+                                                'f': 'false'
+                                            },
+                                            meta={'cookiejar': response.meta['cookiejar']},
+                                            dont_filter=True,
+                                            callback=self.after_login)]
+
+    """
+    def _requests_to_follow(self, response):
+        if not isinstance(response, HtmlResponse):
+            return
+        seen = set()
+        for n, rule in enumerate(self._rules):
+            links = [l for l in rule.link_extractor.extract_links(response) if l not in seen]
+            if links and rule.process_links:
+                links = rule.process_links(links)
+            for link in links:
+                seen.add(link)
+                r = Request(url=link.url, callback=self._response_downloaded)
+                # 下面这句是我重写的
+                r.meta.update(rule=n, link_text=link.text, cookiejar=response.meta['cookiejar'])
+                yield rule.process_request(r)
+    """
     def after_login(self, response):
         inspect_response(response, self)
+        cookieJar = response.meta.setdefault('cookiejar', cookies.CookieJar())
+        cookieJar.extract_cookies(response, response.request)
+        for cookie in cookieJar:
+            print cookie
         for url in self.start_urls :
             yield Request( url=url,
                             meta={"cookiejar": response.meta['cookiejar']},
                             callback=self.parse_page)
 
     def parse_page(self, response):
+
         province = response.meta.get('province', '')
         city = response.meta.get('city', '')
         area = response.meta.get('area', '')

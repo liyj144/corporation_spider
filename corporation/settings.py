@@ -24,7 +24,7 @@ ITEM_PIPELINES = {
 
 # 重复性过滤采用布隆过滤的方式
 DUPEFILTER_CLASS = "corporation.misc.bloomfilter.BLOOMDupeFilter"
-
+COOKIES_ENABLES = True
 WEBSERVICE_ENABLED = False
 TELNETCONSOLE_ENABLED = False
 LOG_LEVEL = "DEBUG"
