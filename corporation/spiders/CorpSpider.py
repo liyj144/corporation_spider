@@ -27,6 +27,8 @@ class CorpSpider(CrawlSpider):
 
     def __init__(self):
         self.url_prefix = 'http://www.zhiqiye.com'
+        self.user_name = 'test3'
+        self.password = 'qwer1234'
         super(CorpSpider, self).__init__()
 
     """
@@ -53,9 +55,9 @@ class CorpSpider(CrawlSpider):
                                         method="POST",
                                         formdata={
                                             'time': "%s" % current,
-                                            'username': 'test3',
-                                            'pass': 'qwer1234',
-                                            'f': 'false'
+                                            'username': self.user_name,
+                                            'pass': self.password,
+                                            'f': 'true'
                                         },
                                         dont_filter=True,
                                         callback=self.after_login)]

@@ -12,8 +12,16 @@ class IgnoreHttpRequestMiddleware(object):
         corp_id = request.meta.get('corp_id')
         # 获取上海的企业
         province = request.meta.get('province')
-        if province and province not in [u'上海', u'北京', u'广东']:
-            raise IgnoreRequest("")
+        area = request.meta.get('area')
+        if province and province in [u'河北', u'湖南', u'浙江', u'安徽', u'江苏']:
+            logging.debug("%s already scrapy, skipped" % province)
+            raise IgnoreRequest("%s no in such province" % province)
+        if province and province not in [u'上海', u'北京']:
+            logging.debug("%s no in such province, skipped" % province)
+            raise IgnoreRequest("%s no in such province" % province)
+        #if area and area not in [u'黄浦区']:
+        #    logging.debug("%s no in such area, skipped" % area)
+        #    raise IgnoreRequest("%s no in such area" % area)
         if confRedis.sismember('corp_id', corp_id):
             logging.debug("corp_id " + corp_id + ",already get, skipped ")
             raise IgnoreRequest("corp_id " + corp_id + ",already get, skipped ")

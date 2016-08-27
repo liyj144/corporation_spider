@@ -64,7 +64,7 @@ class CorpSpider(CrawlSpider):
                                         #headers=self.post_headers,
                                         formdata={
                                             'time': "%s" % current,
-                                            'username': 'test3',
+                                            'username': 'test2',
                                             'pass': 'qwer1234',
                                             'f': 'false'
                                         },
@@ -94,7 +94,7 @@ class CorpSpider(CrawlSpider):
     分析企业详情
     """
     def parse_corp(self, response):
-        inspect_response(response, self)
+        #inspect_response(response, self)
         print "parse corp"
         item = CorpItem()
         item["province"] = response.meta.get('province', '')
