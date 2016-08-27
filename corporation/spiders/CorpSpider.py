@@ -84,6 +84,7 @@ class CorpSpider(CrawlSpider):
     分析城市详情
     """
     def parse_city(self, response):
+        self.log("parse city ...")
         province = response.meta.get('province', '')
         corp = CorpParseModel()
         ar_city = corp.get_city_list(response, '20')
@@ -93,14 +94,18 @@ class CorpSpider(CrawlSpider):
                               meta={"province": province,
                                     "city": city[1]}, callback=self.parse_area)
         else:
-            yield Request(response.url,
-                          meta={"province": province,
-                                "city": ''}, callback=self.parse_area)
+            ar_area = corp.get_city_list(response, '30')
+            for area in ar_area:
+                yield Request("%s%s" % (self.url_prefix, area[0]),
+                              meta={"province": province,
+                                    "city": "",
+                                    "area": area[1]}, callback=self.parse_page)
 
     """
     分析区域详情
     """
     def parse_area(self, response):
+        self.log("parse area ...")
         province = response.meta.get('province', '')
         city = response.meta.get('city', '')
         corp = CorpParseModel()
@@ -115,6 +120,7 @@ class CorpSpider(CrawlSpider):
     分析页面上企业名单, 如果有下一页， 则在下一页继续执行本方法
     """
     def parse_page(self, response):
+        self.log("parse page ...")
         province = response.meta.get('province', '')
         city = response.meta.get('city', '')
         area = response.meta.get('area', '')

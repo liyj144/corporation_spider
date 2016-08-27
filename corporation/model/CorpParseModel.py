@@ -23,7 +23,7 @@ class CorpParseModel(object):
         for i in xrange(0, len(ar_city), 2):
             url = ar_city[i]
             name = ar_city[i + 1]
-            if name in ["全国"]:
+            if name in [u"全国"]:
                 continue
             city_list.append((url, name))
         return city_list
