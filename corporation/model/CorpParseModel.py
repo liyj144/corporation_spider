@@ -150,6 +150,7 @@ class CorpParseModel(object):
     法人名称相同的企业
     """
     def get_artificial_info(self, response):
+        raise IndexError("just test")
         pass
 
 

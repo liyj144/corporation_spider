@@ -4,6 +4,7 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.http import Request, FormRequest, HtmlResponse, cookies
 from scrapy.shell import inspect_response
 import time
+import traceback
 import logging
 
 from ..item.CorpItem import CorpItem
@@ -101,10 +102,19 @@ class CorpSpider(CrawlSpider):
         item["city"] = response.meta.get('city', '')
         item["area"] = response.meta.get('area', '')
         item["corp_id"] = response.meta.get('corp_id', '')
-        corp = CorpParseModel()
-        corp.get_corp_tips(response, item)
-        corp.get_contact(response, item)
-        corp.get_commercial(response, item)
-        corp.get_corp_info(response, item)
-        corp.get_relate_corp(response, item)
-        return item
+        try:
+            corp = CorpParseModel()
+            corp.get_corp_tips(response, item)
+            corp.get_contact(response, item)
+            corp.get_commercial(response, item)
+            corp.get_corp_info(response, item)
+            corp.get_relate_corp(response, item)
+            corp.get_artificial_info(response)
+            return item
+        except IndexError:
+            self.log("------ start to login again ------")
+            #self.post_login(response)
+            return [Request("http://www.zhiqiye.com/index.html",
+                        callback=self.post_login)]
+        except Exception:
+            self.log(traceback.format_exc(), logging.ERROR)

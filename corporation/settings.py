@@ -4,7 +4,7 @@ BOT_NAME = 'corporation'
 
 SPIDER_MODULES = ['corporation.spiders']
 NEWSPIDER_MODULE = 'corporation.spiders'
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 DOWNLOADER_MIDDLEWARES = {
     'corporation.misc.middlewares.IgnoreHttpRequestMiddleware': 1,
