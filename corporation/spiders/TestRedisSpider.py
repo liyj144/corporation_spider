@@ -1,11 +1,13 @@
 # encoding: utf-8
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
+from scrapy.spiders.init import InitSpider
 from scrapy.http import Request, FormRequest, HtmlResponse, cookies
 from scrapy.shell import inspect_response
 import time
 import traceback
 import logging
+import requests
 
 from ..item.CorpItem import CorpItem
 from ..model.CorpParseModel import CorpParseModel
@@ -56,8 +58,22 @@ class CorpSpider(CrawlSpider):
         return [Request("http://www.zhiqiye.com/index.html",
                         callback=self.post_login)]
 
-    def post_login(self, response):
+    def re_login(self):
+        logging.info("re login ...")
+        return [Request("http://www.zhiqiye.com/index.html",
+                        callback=self.post_login)]
+
+    def post_login(self, response, re_login=False):
         logging.info("post login ...")
+        old_url = ""
+        old_meta = {}
+        if re_login:
+            old_url = response.url
+            old_meta = response.meta
+            new_url = "http://www.zhiqiye.com/index.html"
+            new_response = requests.get(new_url)
+            #inspect_response(response, self)
+            response = response.replace(url=new_url, body=new_response.content)
         current = int(time.time() * 1000)
         return [FormRequest.from_response(response,
                                         url="http://www.zhiqiye.com/account/login/",
@@ -69,13 +85,28 @@ class CorpSpider(CrawlSpider):
                                             'pass': 'qwer1234',
                                             'f': 'false'
                                         },
+                                        meta={
+                                            "old_url": old_url,
+                                            "old_meta": old_meta,
+                                            "is_retry": True
+                                        },
                                         dont_filter=True,
                                         callback=self.after_login)]
 
     def after_login(self, response):
-        for url in self.start_urls :
-            yield Request( url=url,
-                            callback=self.parse_page)
+        old_url = response.meta.get('old_url')
+        if old_url:
+            logging.info("after login again, and call old url again ...%s" % old_url)
+            new_response = requests.get(old_url)
+            response = response.replace(url=old_url, body=new_response.content)
+            meta = response.meta.get('old_meta')
+            yield Request(old_url,
+                          meta=meta,
+                          callback=self.parse_corp)
+        else:
+            for url in self.start_urls :
+                yield Request(url=url,
+                              callback=self.parse_page)
 
     def parse_page(self, response):
         province = response.meta.get('province', '')
@@ -94,14 +125,22 @@ class CorpSpider(CrawlSpider):
     """
     分析企业详情
     """
-    def parse_corp(self, response):
+    def parse_corp(self, response, meta=False):
         #inspect_response(response, self)
         print "parse corp"
+        if meta:
+            response_meta = meta
+        else:
+            response_meta = response.meta
         item = CorpItem()
-        item["province"] = response.meta.get('province', '')
-        item["city"] = response.meta.get('city', '')
-        item["area"] = response.meta.get('area', '')
-        item["corp_id"] = response.meta.get('corp_id', '')
+        item["province"] = response_meta.get('province', '')
+        item["city"] = response_meta.get('city', '')
+        item["area"] = response_meta.get('area', '')
+        item["corp_id"] = response_meta.get('corp_id', '')
+        is_retry = response_meta.get('is_retry', False)
+        if is_retry:
+            inspect_response(response, self)
+        print "retry here is ", is_retry
         try:
             corp = CorpParseModel()
             corp.get_corp_tips(response, item)
@@ -113,8 +152,9 @@ class CorpSpider(CrawlSpider):
             return item
         except IndexError:
             self.log("------ start to login again ------")
-            #self.post_login(response)
-            return [Request("http://www.zhiqiye.com/index.html",
-                        callback=self.post_login)]
+            if is_retry:
+                self.log("------ retry login and fails ------")
+            else:
+                return self.post_login(response, True)
         except Exception:
             self.log(traceback.format_exc(), logging.ERROR)

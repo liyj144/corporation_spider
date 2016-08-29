@@ -4,7 +4,9 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.http import Request, FormRequest
 from scrapy.shell import inspect_response
 import time
+import traceback
 import logging
+import requests
 
 from ..item.CorpItem import CorpItem
 from ..model.CorpParseModel import CorpParseModel
@@ -47,8 +49,16 @@ class CorpSpider(CrawlSpider):
         return [Request("http://www.zhiqiye.com/index.html",
                     callback=self.post_login)]
 
-    def post_login(self, response):
+    def post_login(self, response, re_login=False):
         logging.info("post login ...")
+        old_url = ""
+        old_meta = {}
+        if re_login:
+            old_url = response.url
+            old_meta = response.meta
+            new_url = "http://www.zhiqiye.com/index.html"
+            new_response = requests.get(new_url)
+            response = response.replace(url=new_url, body=new_response.content)
         current = int(time.time() * 1000)
         return [FormRequest.from_response(response,
                                         url="http://www.zhiqiye.com/account/login/",
@@ -59,6 +69,11 @@ class CorpSpider(CrawlSpider):
                                             'pass': self.password,
                                             'f': 'true'
                                         },
+                                        meta={
+                                            "old_url": old_url,
+                                            "old_meta": old_meta,
+                                            "is_retry": True
+                                        },
                                         dont_filter=True,
                                         callback=self.after_login)]
 
@@ -66,8 +81,18 @@ class CorpSpider(CrawlSpider):
     登陆后重新进行规则匹配
     """
     def after_login(self, response):
-        for url in self.start_urls :
-            yield Request(url=url, callback=self.parse_province)
+        old_url = response.meta.get('old_url')
+        if old_url:
+            logging.info("after login again, and call old url again ...%s" % old_url)
+            new_response = requests.get(old_url)
+            response = response.replace(url=old_url, body=new_response.content)
+            meta = response.meta.get('old_meta')
+            yield Request(old_url,
+                          meta=meta,
+                          callback=self.parse_corp)
+        else:
+            for url in self.start_urls :
+                yield Request(url=url, callback=self.parse_province)
 
     """
     分析省份详情
@@ -147,17 +172,31 @@ class CorpSpider(CrawlSpider):
     """
     分析企业详情
     """
-    def parse_corp(self, response):
+    def parse_corp(self, response, meta=False):
         #inspect_response(response, self)
+        if meta:
+            response_meta = meta
+        else:
+            response_meta = response.meta
         item = CorpItem()
-        item["province"] = response.meta.get('province', '')
-        item["city"] = response.meta.get('city', '')
-        item["area"] = response.meta.get('area', '')
-        item["corp_id"] = response.meta.get('corp_id', '')
-        corp = CorpParseModel()
-        corp.get_corp_tips(response, item)
-        corp.get_contact(response, item)
-        corp.get_commercial(response, item)
-        corp.get_corp_info(response, item)
-        corp.get_relate_corp(response, item)
-        return item
+        item["province"] = response_meta.get('province', '')
+        item["city"] = response_meta.get('city', '')
+        item["area"] = response_meta.get('area', '')
+        item["corp_id"] = response_meta.get('corp_id', '')
+        is_retry = response_meta.get('is_retry', False)
+        try:
+            corp = CorpParseModel()
+            corp.get_corp_tips(response, item)
+            corp.get_contact(response, item)
+            corp.get_commercial(response, item)
+            corp.get_corp_info(response, item)
+            corp.get_relate_corp(response, item)
+            return item
+        except IndexError:
+            self.log("------------- start to login again -------------")
+            if is_retry:
+                self.log("------ retry login and fails ------")
+            else:
+                return self.post_login(response, True)
+        except Exception:
+            self.log(traceback.format_exc(), logging.ERROR)
