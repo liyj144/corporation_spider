@@ -5,13 +5,11 @@ Created by yanjie on 15-7-13.
 """
 from flask import Flask
 from flask_mail import Mail, Message
-import pdb
+import pudb
 
 app = Flask(__name__)
-mail = Mail(app)
-#mail.init_app(app)
 
-# config
+# mail config
 app.config['MAIL_SUFFIX'] = 'mail.163.com'
 #app.config['MAIL_SERVER'] = '10.213.18.243'
 #app.config['MAIL_PORT'] = 1234
@@ -23,6 +21,10 @@ app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'lyjtest3@163.com'
 app.config['MAIL_PASSWORD'] = 'intsig'
 app.config['MAIL_DEFAULT_SENDER'] = '测试邮件<lyjtest3@163.com>'
+
+mail = Mail(app)
+#mail.init_app(app)
+
 
 
 @app.route('/index')
@@ -37,6 +39,7 @@ def send():
                   recipients=["liyj144@163.com"])
     msg.body = "text body"
     msg.html = "<b>HTML</b>body"
+    #pudb.set_trace()
     mail.send(msg)
     return "send ok"
 
